@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIPRET</title>
+<meta name="description" content="Sistema inteligente de predicación y territorios · Congregación Vicuña Rozas">
+<meta name="theme-color" content="#183722">
+<meta name="application-name" content="SIPRET">
+<meta name="apple-mobile-web-app-title" content="SIPRET">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icono-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<script src="config.js"></script>
+<style>
+:root{--green:#183722;--green2:#2c5a39;--ink:#1d2b21;--muted:#5d6b60;--bg:#f4f7f3}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#fff;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+body{overflow:hidden;overscroll-behavior:none}
+/* App: SIPRET a pantalla completa */
+#app{position:fixed;inset:0;padding-top:env(safe-area-inset-top);background:var(--green)}
+#app[hidden]{display:none}
+#app iframe{display:block;width:100%;height:100%;border:0;background:#fff}
+/* Pantalla de carga */
+#splash{position:fixed;inset:0;z-index:5;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity .35s}
+#splash.out{opacity:0;pointer-events:none}
+#splash[hidden]{display:none}
+#splash img{width:min(78vw,340px);height:auto}
+.bar{width:min(60vw,220px);height:5px;border-radius:5px;background:#e3ebe1;overflow:hidden}
+.bar i{display:block;height:100%;width:40%;background:var(--green);border-radius:5px;animation:go 1.1s ease-in-out infinite}
+@keyframes go{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
+#splash small{color:var(--muted);font-size:14px}
+/* Portada para instalar */
+#home{position:fixed;inset:0;overflow:auto;background:var(--bg);padding:calc(20px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
+#home[hidden]{display:none}
+.card{max-width:520px;margin:0 auto;background:#fff;border:1px solid #dfe7dc;border-radius:20px;padding:22px 18px;box-shadow:0 6px 24px rgba(24,55,34,.08)}
+.logo{display:block;width:100%;max-width:340px;margin:0 auto 6px}
+h1{font-size:21px;margin:10px 0 4px;color:var(--green);text-align:center}
+.sub{text-align:center;color:var(--muted);font-size:14.5px;margin:0 0 18px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border-radius:14px;border:1px solid #cfdacc;background:#fff;color:var(--green);font-size:16.5px;font-weight:700;text-decoration:none;cursor:pointer;font-family:inherit}
+.btn.main{background:var(--green);border-color:var(--green);color:#fff}
+.btn+.btn{margin-top:10px}
+.steps{margin:6px 0 16px;padding-left:22px;font-size:15.5px;line-height:1.55}
+.steps li{margin:7px 0}
+.key{display:inline-block;border:1px solid #c9d3cc;border-radius:8px;padding:0 7px;background:#f5f7f5;font-weight:700;white-space:nowrap}
+.tip{background:#fff7e0;border:1px solid #f0d58a;border-radius:12px;padding:10px 12px;font-size:14px;margin:0 0 14px}
+.ok{background:#eef6f0;border:1px solid #c9dfcf;border-radius:12px;padding:10px 12px;font-size:14px;margin:0 0 14px;color:var(--green)}
+.sec{font-weight:800;color:var(--green);margin:4px 0 2px;font-size:15.5px}
+.foot{text-align:center;color:var(--muted);font-size:12.5px;margin-top:16px}
+.msg{max-width:440px;margin:0 auto;text-align:center;padding:30px 10px;color:var(--ink)}
+.msg b{display:block;font-size:19px;color:var(--green);margin-bottom:6px}
+</style>
+</head>
+<body>
+<div id="splash"><img src="logo.jpg" alt="SIPRET"><div class="bar"><i></i></div><small id="splash-text">Abriendo SIPRET…</small></div>
+<div id="app" hidden></div>
+<div id="home" hidden><div class="card" id="home-card"></div></div>
+<script>
+(function () {
+  var url = String(window.SIPRET_URL || '');
+  var ua = navigator.userAgent || '';
+  var ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var android = /android/i.test(ua);
+  var inApp = /FBAN|FBAV|Instagram|WhatsApp|Line\//i.test(ua);
+  var chromeIos = /CriOS/i.test(ua), samsung = /SamsungBrowser/i.test(ua);
+  var installed = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true || /[?&]app=1/.test(location.search);
+  var promptEvt = null;
+  function $(id) { return document.getElementById(id); }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+  if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { }); });
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); promptEvt = e; var b = $('install-now'); if (b) b.hidden = false; });
+  window.addEventListener('appinstalled', function () { store('sipret-instalada', '1'); });
+
+  function hideSplash() { var s = $('splash'); s.classList.add('out'); setTimeout(function () { s.hidden = true; }, 400); }
+  function message(title, text, retry) {
+    $('splash').hidden = true; $('app').hidden = true; $('home').hidden = false;
+    $('home-card').innerHTML = '<img class="logo" src="logo.jpg" alt="SIPRET"><div class="msg"><b>' + title + '</b>' + text + '</div>' + (retry ? '<button class="btn main" onclick="location.reload()">Volver a intentar</button>' : '');
+  }
+  function openApp() {
+    if (!/^https:\/\/script\.google\.com\/.+\/exec/.test(url)) { message('Falta configurar la app', 'Pega la dirección de SIPRET en el archivo <b>config.js</b>.'); return; }
+    if (navigator.onLine === false) { message('Sin conexión', 'SIPRET necesita internet. Revisa tu conexión y vuelve a intentar.', true); return; }
+    $('home').hidden = true; $('splash').hidden = false; $('splash').classList.remove('out'); $('app').hidden = false;
+    var f = document.createElement('iframe');
+    f.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'app=1';
+    f.title = 'SIPRET';
+    f.setAttribute('allow', 'clipboard-read; clipboard-write; web-share; geolocation; fullscreen');
+    f.setAttribute('allowfullscreen', '');
+    f.addEventListener('load', function () { setTimeout(hideSplash, 500); });
+    $('app').innerHTML = ''; $('app').appendChild(f);
+    setTimeout(function () { $('splash-text').textContent = 'Cargando… la primera vez puede tardar unos segundos.'; }, 6000);
+    setTimeout(hideSplash, 20000);
+  }
+  function installSteps() {
+    var share = '<span class="key">Compartir ⬆︎</span>', dots = '<span class="key">⋮</span>';
+    if (ios) {
+      if (inApp) return '<div class="tip">Estás dentro de WhatsApp. Toca <b>Compartir ⬆︎</b> o <b>⋯</b> y elige <b>«Abrir en Safari»</b>. Desde ahí se instala.</div>';
+      return '<div class="sec">Instalar en tu iPhone</div><ol class="steps">' +
+        (chromeIos ? '<li>Toca ' + share + ' arriba a la derecha.</li>' : '<li>Toca ' + share + ' en la barra de abajo de Safari.</li>') +
+        '<li>Desliza hacia abajo y toca <b>«Agregar a inicio»</b>.</li><li>Toca <b>«Agregar»</b>. Listo: el ícono de SIPRET queda en tu pantalla.</li></ol>';
+    }
+    if (android) {
+      if (inApp) return '<div class="tip">Estás dentro de WhatsApp. Toca <b>⋮</b> y elige <b>«Abrir en Chrome»</b>. Desde ahí se instala.</div>';
+      return '<button class="btn main" id="install-now" hidden>📲 Instalar la app SIPRET</button>' +
+        '<div class="sec" style="margin-top:14px">Si no aparece el botón</div><ol class="steps">' +
+        (samsung ? '<li>Toca el menú <span class="key">☰</span> abajo.</li><li>Toca <b>«Agregar página a» → «Pantalla de inicio»</b>.</li>' : '<li>Toca el menú ' + dots + ' arriba a la derecha.</li><li>Toca <b>«Instalar app»</b> (o «Agregar a la pantalla principal»).</li>') +
+        '<li>Confirma con <b>«Instalar»</b>.</li></ol>';
+    }
+    return '<button class="btn main" id="install-now" hidden>💻 Instalar SIPRET en este computador</button><div class="ok" style="margin-top:12px">En el celular: abre este mismo enlace y sigue los pasos que aparecen.</div>';
+  }
+  function showHome() {
+    $('splash').hidden = true; $('home').hidden = false;
+    $('home-card').innerHTML = '<img class="logo" src="logo.jpg" alt="SIPRET"><h1>Instala la app SIPRET</h1><p class="sub">Programa de predicación y territorios · Congregación Vicuña Rozas</p>' +
+      installSteps() + '<button class="btn" id="open-browser">Abrir sin instalar</button>' +
+      '<div class="foot">Después de instalarla, ábrela siempre desde el ícono de SIPRET.</div>';
+    var b = $('install-now');
+    if (b) { b.hidden = !promptEvt; b.addEventListener('click', function () { if (!promptEvt) return; var p = promptEvt; promptEvt = null; p.prompt(); (p.userChoice || Promise.resolve({})).then(function (r) { if (r && r.outcome === 'accepted') { store('sipret-instalada', '1'); b.textContent = '✓ Instalada. Ábrela desde el ícono de SIPRET'; b.disabled = true; } }); }); }
+    $('open-browser').addEventListener('click', openApp);
+  }
+  if (installed) openApp(); else showHome();
+})();
+</script>
+</body>
+</html>
