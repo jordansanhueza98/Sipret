@@ -23,9 +23,10 @@
 html,body{margin:0;height:100%;background:#fff;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
 body{overflow:hidden;overscroll-behavior:none}
 /* App: SIPRET a pantalla completa */
-#app{position:fixed;inset:0;padding-top:env(safe-area-inset-top);background:var(--green)}
+#app{position:fixed;inset:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);background:linear-gradient(var(--green) 0 50%,#fff 50% 100%);overflow:hidden}
 #app[hidden]{display:none}
-#app iframe{display:block;width:100%;height:100%;border:0;background:#fff}
+/* En iPhone el iframe se estira al ancho del contenido si no se fija así (truco 1px + min-width) */
+#app iframe{display:block;width:1px;min-width:100%;max-width:100%;height:100%;border:0;background:#fff}
 /* Pantalla de carga */
 #splash{position:fixed;inset:0;z-index:5;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity .35s}
 #splash.out{opacity:0;pointer-events:none}
