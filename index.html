@@ -86,9 +86,13 @@ h1{font-size:21px;margin:10px 0 4px;color:var(--green);text-align:center}
   function openApp() {
     if (!/^https:\/\/script\.google\.com\/.+\/exec/.test(url)) { message('Falta configurar la app', 'Pega la dirección de SIPRET en el archivo <b>config.js</b>.'); return; }
     if (navigator.onLine === false) { message('Sin conexión', 'SIPRET necesita internet. Revisa tu conexión y vuelve a intentar.', true); return; }
+    var target = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'app=1';
+    // iPhone: Safari no muestra bien una página de Google dentro de otra (queda más ancha y más baja).
+    // Por eso en iPhone la app abre SIPRET directo: se ve igual que en el navegador, a pantalla completa.
+    if (ios) { $('home').hidden = true; $('app').hidden = true; $('splash').hidden = false; $('splash').classList.remove('out'); setTimeout(function () { location.replace(target); }, 150); return; }
     $('home').hidden = true; $('splash').hidden = false; $('splash').classList.remove('out'); $('app').hidden = false;
     var f = document.createElement('iframe');
-    f.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'app=1';
+    f.src = target;
     f.title = 'SIPRET';
     f.setAttribute('allow', 'clipboard-read; clipboard-write; web-share; geolocation; fullscreen');
     f.setAttribute('allowfullscreen', '');
